@@ -153,6 +153,93 @@ input[type="time"] {
   color: var(--text-secondary);
 }
 
+/* ---- Shared switch (role="switch" button; label text always visible) ---- */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+}
+
+.switch-track {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--border-strong);
+  position: relative;
+  transition: background 0.15s ease;
+  flex: none;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+
+.switch[aria-checked="true"] .switch-track {
+  background: var(--accent-teal);
+}
+
+.switch[aria-checked="true"] .switch-thumb {
+  transform: translateX(18px);
+}
+
+.switch-state {
+  font-weight: 600;
+  min-width: 1.8rem;
+  text-align: left;
+}
+
+/* ---- Text link button ---- */
+.btn-link {
+  background: none;
+  border: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--link);
+  cursor: pointer;
+  min-height: 44px;
+  padding: 0 var(--space-1);
+}
+
+.btn-link:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+
+/* ---- High-contrast / Windows High Contrast: don't rely on color alone ---- */
+@media (forced-colors: active) {
+  .switch-track {
+    border: 1px solid ButtonText;
+    background: Canvas;
+  }
+  .switch-thumb {
+    background: ButtonText;
+  }
+  .switch[aria-checked="true"] .switch-track {
+    background: Highlight;
+  }
+  .switch[aria-checked="true"] .switch-thumb {
+    background: HighlightText;
+  }
+  .btn {
+    border: 1px solid ButtonText;
+  }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

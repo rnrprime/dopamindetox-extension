@@ -57,6 +57,14 @@ function renderSite(): void {
   siteDomainEl.textContent = currentDomain;
 
   const isBlocked = list.includes(currentDomain);
+
+  if (isBlocked) {
+    const status = document.createElement('p');
+    status.className = 'site-status';
+    status.textContent = 'On your block list';
+    siteActionEl.appendChild(status);
+  }
+
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = isBlocked ? 'btn btn-danger' : 'btn btn-primary';
