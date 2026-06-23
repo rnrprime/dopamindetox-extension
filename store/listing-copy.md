@@ -69,6 +69,8 @@ presets.
   authorizes the redirect, not data access.
 - **Storage:** Saves your block list, settings, and (if you subscribe) your Pro
   status, in your browser.
+- **Alarms (Pro):** A periodic heartbeat that checks your schedules and per-site
+  daily usage limits so blocks turn on/off at the right times.
 
 ## Category
 

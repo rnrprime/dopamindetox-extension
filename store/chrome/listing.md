@@ -23,6 +23,8 @@ Shared copy: see `../listing-copy.md`.
   page content and transmits nothing. (Chrome will show "read and change all your
   data on websites" — this is the standard, expected warning for a site blocker.)
 - **storage:** Save the user's block list, settings, and Pro status locally.
+- **alarms (Pro):** Periodic heartbeat to evaluate schedules and per-site daily
+  usage limits.
 - **Remote code:** None. The extension bundles all its code; nothing is fetched
   and executed at runtime.
 - **Data usage disclosures:** Select "does NOT collect or use" for all data

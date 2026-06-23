@@ -4,15 +4,22 @@ import './style.css';
 import { createCrossPromo } from '@/lib/crosspromo';
 import { normalizeDomain } from '@/lib/domain';
 import { PRIVACY_URL, SUPPORT_EMAIL, WEBSITE_URL } from '@/lib/links';
+import { strictBlocksRelaxing } from '@/lib/strict';
 import {
   addDomain,
   blocklist,
   masterEnabled,
   removeDomain,
+  strict,
+  type StrictSettings,
 } from '@/lib/storage';
+import { initProUI } from './pro-ui';
 
 // Cross-promo + about section (single source of truth for URLs in links.ts).
 document.querySelector('#crosspromo-slot')?.appendChild(createCrossPromo());
+
+// Pro cards (status/paywall, presets, strict mode).
+void initProUI();
 
 const privacyLink = document.querySelector<HTMLAnchorElement>('#link-privacy');
 if (privacyLink) privacyLink.href = PRIVACY_URL;
@@ -28,6 +35,7 @@ if (versionEl) {
 
 const masterBtn = document.querySelector<HTMLButtonElement>('#master');
 const masterState = document.querySelector<HTMLElement>('#master-state');
+const masterNote = document.querySelector<HTMLElement>('#master-note');
 const form = document.querySelector<HTMLFormElement>('#add-form');
 const input = document.querySelector<HTMLInputElement>('#add-input');
 const errorEl = document.querySelector<HTMLElement>('#add-error');
@@ -36,6 +44,27 @@ const emptyEl = document.querySelector<HTMLElement>('#empty');
 
 let list: string[] = [];
 let enabled = true;
+let strictState: StrictSettings = {
+  enabled: false,
+  cooldownMinutes: 30,
+  pendingUnlockAt: null,
+};
+
+function strictLocked(): boolean {
+  return strictBlocksRelaxing(strictState);
+}
+
+function showMasterNote(message: string): void {
+  if (!masterNote) return;
+  masterNote.textContent = message;
+  masterNote.hidden = false;
+}
+
+function clearMasterNote(): void {
+  if (!masterNote) return;
+  masterNote.textContent = '';
+  masterNote.hidden = true;
+}
 
 function showError(message: string): void {
   if (!errorEl) return;
@@ -80,6 +109,10 @@ function renderList(): void {
     remove.className = 'btn btn-danger';
     remove.textContent = 'Remove';
     remove.setAttribute('aria-label', `Remove ${domain}`);
+    remove.disabled = strictLocked();
+    if (remove.disabled) {
+      remove.title = 'Strict mode is on — start a cooldown to remove sites.';
+    }
     remove.addEventListener('click', () => {
       void onRemove(domain);
     });
@@ -117,7 +150,15 @@ form?.addEventListener('submit', (e) => {
 input?.addEventListener('input', clearError);
 
 masterBtn?.addEventListener('click', () => {
-  enabled = !enabled;
+  const next = !enabled;
+  if (!next && strictLocked()) {
+    showMasterNote(
+      'Strict mode is on. Start a cooldown in Strict mode to turn blocking off.',
+    );
+    return;
+  }
+  clearMasterNote();
+  enabled = next;
   renderMaster();
   void masterEnabled.setValue(enabled);
 });
@@ -131,11 +172,17 @@ masterEnabled.watch((value) => {
   enabled = value;
   renderMaster();
 });
+strict.watch((value) => {
+  strictState = value;
+  if (!strictLocked()) clearMasterNote();
+  renderList();
+});
 
 async function init(): Promise<void> {
-  [list, enabled] = await Promise.all([
+  [list, enabled, strictState] = await Promise.all([
     blocklist.getValue(),
     masterEnabled.getValue(),
+    strict.getValue(),
   ]);
   renderMaster();
   renderList();

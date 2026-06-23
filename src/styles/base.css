@@ -153,6 +153,12 @@ input[type="time"] {
   color: var(--text-secondary);
 }
 
+.error {
+  color: var(--active-clay);
+  font-size: var(--fs-callout);
+  margin: 0;
+}
+
 /* ---- Shared switch (role="switch" button; label text always visible) ---- */
 .switch {
   display: inline-flex;

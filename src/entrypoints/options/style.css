@@ -62,12 +62,6 @@ body {
   flex: none;
 }
 
-.error {
-  color: var(--active-clay);
-  font-size: var(--fs-callout);
-  margin: 0;
-}
-
 .block-list {
   list-style: none;
   margin: 0;
@@ -119,4 +113,187 @@ body {
 .about-version {
   font-size: var(--fs-footnote);
   margin: 0;
+}
+
+/* ---- Pro sections ---- */
+.h-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pro-badge {
+  font-size: var(--fs-footnote);
+  font-weight: 600;
+  color: var(--accent-teal);
+  border: 1px solid var(--accent-teal);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-2);
+  line-height: 1.4;
+}
+
+.pro-feature-list {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pro-price {
+  font-weight: 600;
+  margin: 0;
+}
+
+.pro-status .btn-primary,
+#pro-status .btn-primary {
+  align-self: flex-start;
+}
+
+.pro-dev {
+  border-top: 1px dashed var(--border-strong);
+  padding-top: var(--space-3);
+  margin-top: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.pro-dev-note,
+.pro-upgrade-note {
+  font-size: var(--fs-footnote);
+  margin: 0;
+}
+
+.preset-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.preset-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+
+.preset-row:first-child {
+  border-top: none;
+}
+
+.preset-name {
+  font-weight: 600;
+}
+
+.preset-count {
+  font-size: var(--fs-footnote);
+}
+
+.strict-cooldown-row {
+  gap: var(--space-3);
+}
+
+.strict-cd-input {
+  width: 6rem;
+}
+
+.strict-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.strict-remaining {
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ---- Schedules ---- */
+.sched-list,
+.usage-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sched-item,
+.usage-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+
+.sched-item:first-child,
+.usage-item:first-child {
+  border-top: none;
+}
+
+.sched-form,
+.usage-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.day-picker {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  width: 100%;
+}
+
+.day-picker legend {
+  font-weight: 600;
+  padding: 0 var(--space-1);
+}
+
+.day-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+}
+
+.sched-times {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.sched-times label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+.usage-name {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.usage-detail {
+  font-size: var(--fs-footnote);
+}
+
+.usage-form input[type='text'] {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.usage-minutes {
+  width: 6rem;
 }

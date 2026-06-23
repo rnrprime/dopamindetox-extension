@@ -14,7 +14,10 @@ export default defineConfig({
     name: 'Dopamin Detox — Website Blocker',
     description:
       'Block distracting websites with a calm, supportive reminder. Your block list stays in your browser — we collect nothing.',
-    permissions: ['declarativeNetRequest', 'storage'],
+    // `alarms` powers the Pro schedule + usage-limit heartbeat (re-evaluating
+    // time windows and per-site daily limits). Usage tracking reads the active
+    // tab via host access — it needs no `tabs` permission.
+    permissions: ['declarativeNetRequest', 'storage', 'alarms'],
     // Host access is REQUIRED for the declarativeNetRequest `redirect` action
     // (the plain permission only implicitly allows `block`). It authorizes the
     // browser to redirect blocked navigations to our calm blocked page; it does

@@ -1,15 +1,19 @@
 import { browser } from '#imports';
-import { blocklist, masterEnabled } from './storage';
+import { isPro } from './pro';
+import { isWithinSchedules } from './schedule';
+import { exceededDomains } from './usage';
+import { blocklist, masterEnabled, schedules } from './storage';
 
 // Core blocking via declarativeNetRequest DYNAMIC rules.
 //
-// Strategy: full re-sync. On every change we read the stored list, remove all
-// existing dynamic rules, and add a fresh rule per domain. This avoids ID drift
-// without persisting a separate id<->domain map.
+// Strategy: full re-sync. On every change we compute the effective set of
+// blocked domains, remove all existing dynamic rules, and add a fresh rule per
+// domain. This avoids ID drift without persisting a separate id<->domain map.
 //
 // Each rule redirects only top-level navigations (main_frame) to our bundled
 // calm "blocked" page, so we control the message (a plain "block" shows the
-// browser's error page). DNR needs no host permissions for this.
+// browser's error page). The redirect action requires host access (declared in
+// the manifest).
 
 const RULE_PRIORITY = 1;
 
@@ -44,18 +48,44 @@ function buildRules(domains: string[]): DnrRule[] {
   }));
 }
 
-/** Rebuild all dynamic rules from the stored list + master switch. */
-export async function syncRules(): Promise<void> {
+/**
+ * The domains that should be blocked RIGHT NOW, combining:
+ *  - master switch (off => nothing)
+ *  - the manual block list, gated by Pro schedules (open outside a window)
+ *  - (Pro) domains that have exceeded their daily usage limit today
+ */
+export async function effectiveBlockedDomains(): Promise<string[]> {
   const [domains, enabled] = await Promise.all([
     blocklist.getValue(),
     masterEnabled.getValue(),
   ]);
+  if (!enabled) return [];
+
+  const pro = await isPro();
+  const set = new Set<string>();
+
+  // Manual list — active unless a Pro schedule says we're outside a window.
+  const sched = pro ? await schedules.getValue() : [];
+  if (isWithinSchedules(sched)) {
+    for (const d of domains) set.add(d);
+  }
+
+  // Usage limits (Pro) — independent trigger; blocked for the rest of the day.
+  if (pro) {
+    for (const d of await exceededDomains()) set.add(d);
+  }
+
+  return [...set];
+}
+
+/** Rebuild all dynamic rules from the current effective block set. */
+export async function syncRules(): Promise<void> {
+  const domains = await effectiveBlockedDomains();
 
   const existing = await browser.declarativeNetRequest.getDynamicRules();
   const removeRuleIds = existing.map((r) => r.id);
 
-  const unique = [...new Set(domains)];
-  const addRules = enabled ? buildRules(unique) : [];
+  const addRules = buildRules(domains);
 
   try {
     await browser.declarativeNetRequest.updateDynamicRules({
@@ -82,11 +112,8 @@ function hostMatches(host: string, domain: string): boolean {
  * domain straight to the calm page. Uses host access (no `tabs` permission).
  */
 export async function enforceOpenTabs(): Promise<void> {
-  const [domains, enabled] = await Promise.all([
-    blocklist.getValue(),
-    masterEnabled.getValue(),
-  ]);
-  if (!enabled || domains.length === 0) return;
+  const domains = await effectiveBlockedDomains();
+  if (domains.length === 0) return;
 
   let tabs;
   try {

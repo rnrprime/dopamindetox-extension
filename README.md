@@ -64,20 +64,33 @@ PNG icons are generated from [`assets/icon.svg`](assets/icon.svg) and committed 
 
 | Permission | Why |
 |---|---|
-| `declarativeNetRequest` | Block/redirect the sites the user chooses. Needs no host permissions. |
-| `storage` | Save the user's block list + settings (and, later, ExtPay status). |
+| `declarativeNetRequest` | Block the sites the user chooses. |
+| host access (`*://*/*`) | **Required** for the DNR `redirect` action (the plain permission only implicitly allows `block`) — to send blocked sites to the calm reminder page. DNR is evaluated by the browser; the extension runs no `webRequest` listener or content scripts and never reads/transmits page data, so the local-only privacy promise holds. |
+| `storage` | Save the user's block list, settings, and Pro status. |
+| `alarms` | (Pro) Heartbeat that re-evaluates schedules and per-site daily usage limits. |
 
-We never request `<all_urls>` host permission. `alarms` / `tabs` and the
-extensionpay.com host permission are added only in the phases that need them
-(schedules/usage-limits, and ExtPay payments).
+> Note: the build brief asserted DNR redirect "needs no host permissions" — that
+> is incorrect for the `redirect` action, so host access is required. Usage-limit
+> tracking reads the active tab via host access and needs **no `tabs` permission**.
 
-## Payments — ExtPay
+## Pro features
 
-Pro is charged via ExtPay (a thin Stripe layer, no server of ours). The owner
-registers the extension at extensionpay.com, connects Stripe (App Shaper), and
-sets prices ($1.99/mo, $14.99/yr). ExtPay + Stripe fees apply. ExtPay keys paid
-status to the user's email **inside the extension only** — it is NOT linked to the
-iOS account and shares nothing with the iOS app. (Wired in P4.)
+Schedules, usage limits, strict mode, and category presets are gated behind
+`isPro()` in [`src/lib/pro.ts`](src/lib/pro.ts).
+
+**Payments are not wired yet.** ExtPay is Stripe-only and Stripe is unavailable in
+the owner's country, so the processor is deferred (see options to choose: a US
+entity for Stripe/ExtPay, or a Merchant-of-Record like Lemon Squeezy/Paddle that
+pays out via Payoneer/Wise). Until one is chosen, Pro unlocks via a local flag
+(`local:proActive`) set by a clearly-labelled **testing** toggle in Options →
+"Dopamin Detox Pro". When a processor is added, it sets that same flag, so no Pro
+feature code changes.
+
+## Cross-browser build status
+
+`npm run build` and `npm run build:firefox` both produce MV3 packages. Real-browser
+load/behaviour must be verified manually (see "Load unpacked"); a build succeeding
+does not prove blocking works — test in each browser.
 
 ## Cross-browser build status
 

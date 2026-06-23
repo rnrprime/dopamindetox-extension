@@ -1,8 +1,7 @@
+import { storage } from '#imports';
+
 // Central Pro-gating — a single source of truth, conceptually like the iOS
 // `ProFeature` enum. FREE features must NEVER import or call this module.
-//
-// The actual ExtPay wiring lands in P4 (see lib/pay.ts). Until then, Pro is
-// treated as locked everywhere.
 
 export const PRO_FEATURES = {
   schedules: 'Schedules',
@@ -13,10 +12,15 @@ export const PRO_FEATURES = {
 
 export type ProFeature = keyof typeof PRO_FEATURES;
 
-/**
- * Whether the user has an active Pro subscription.
- * Replaced with the ExtPay-backed check in P4.
- */
+// Pro entitlement flag. A payment processor is NOT yet wired (ExtPay/Stripe are
+// unavailable in the owner's country) — until one is, Pro unlocks via this local
+// flag (set by the temporary "testing" toggle in Options). When a processor is
+// added later, it sets/refreshes exactly this flag, so no feature code changes.
+export const proActive = storage.defineItem<boolean>('local:proActive', {
+  fallback: false,
+});
+
+/** Whether the user currently has Pro. */
 export async function isPro(): Promise<boolean> {
-  return false;
+  return proActive.getValue();
 }
