@@ -14,10 +14,16 @@ export default defineConfig({
     name: 'Dopamin Detox — Website Blocker',
     description:
       'Block distracting websites with a calm, supportive reminder. Your block list stays in your browser — we collect nothing.',
-    // activeTab lets the popup read ONLY the current tab's domain, and only when
-    // the user opens the popup (a user gesture). It is not a host permission and
-    // shows no scary warning — far narrower than `tabs`.
-    permissions: ['declarativeNetRequest', 'storage', 'activeTab'],
+    permissions: ['declarativeNetRequest', 'storage'],
+    // Host access is REQUIRED for the declarativeNetRequest `redirect` action
+    // (the plain permission only implicitly allows `block`). It authorizes the
+    // browser to redirect blocked navigations to our calm blocked page; it does
+    // NOT give our code access to page content or traffic — DNR is evaluated by
+    // the browser and we run no webRequest listener or content scripts. The
+    // local-only / "we collect nothing" promise still holds. Justified in the
+    // store listings + privacy notice. Also lets the popup read the current
+    // tab's domain (so `activeTab` is no longer needed).
+    host_permissions: ['*://*/*'],
     icons: {
       16: 'icons/16.png',
       32: 'icons/32.png',

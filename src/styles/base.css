@@ -10,6 +10,12 @@
   box-sizing: border-box;
 }
 
+/* The `hidden` attribute must win over component `display` rules
+   (e.g. .empty { display: flex }), otherwise hidden sections still show. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   color-scheme: light dark;
 }
