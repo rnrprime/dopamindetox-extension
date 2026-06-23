@@ -75,8 +75,11 @@ PNG icons are generated from [`assets/icon.svg`](assets/icon.svg) and committed 
 
 ## Pro features
 
-Schedules, usage limits, strict mode, and category presets are gated behind
-`isPro()` in [`src/lib/pro.ts`](src/lib/pro.ts).
+Schedules, usage limits, strict mode, permanent block (hard mode), and category
+presets are gated behind `isPro()` in [`src/lib/pro.ts`](src/lib/pro.ts).
+Permanent ("hard mode") blocks are enforced unconditionally once set — even with
+the master switch off and regardless of Pro status — and cannot be removed in the
+UI (only uninstalling the extension undoes them).
 
 **Payments are not wired yet.** ExtPay is Stripe-only and Stripe is unavailable in
 the owner's country, so the processor is deferred (see options to choose: a US

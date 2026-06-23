@@ -297,3 +297,57 @@ body {
 .usage-minutes {
   width: 6rem;
 }
+
+/* ---- Permanent block (hard mode) ---- */
+.perm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.perm-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+
+.perm-item:first-child {
+  border-top: none;
+}
+
+.perm-name {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.perm-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--fs-footnote);
+  font-weight: 600;
+  color: var(--active-clay);
+}
+
+.perm-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.perm-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.perm-form input[type='text'] {
+  flex: 1;
+  min-width: 12rem;
+}

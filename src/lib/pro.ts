@@ -7,6 +7,7 @@ export const PRO_FEATURES = {
   schedules: 'Schedules',
   usageLimits: 'Usage limits',
   strictMode: 'Strict mode',
+  permanentBlock: 'Permanent block (hard mode)',
   categoryPresets: 'Category presets',
 } as const;
 

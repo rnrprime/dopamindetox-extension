@@ -9,7 +9,9 @@ import {
 import { usedSecondsToday } from '@/lib/usage';
 import {
   addDomains,
+  addPermanent,
   blocklist,
+  permanentList,
   schedules,
   strict,
   usageLimits,
@@ -27,6 +29,7 @@ const presetsEl = document.querySelector<HTMLElement>('#pro-presets');
 const schedulesEl = document.querySelector<HTMLElement>('#pro-schedules');
 const usageEl = document.querySelector<HTMLElement>('#pro-usage');
 const strictEl = document.querySelector<HTMLElement>('#pro-strict');
+const permanentEl = document.querySelector<HTMLElement>('#pro-permanent');
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -39,6 +42,7 @@ let strictState: StrictSettings = {
 let list: string[] = [];
 let scheduleList: Schedule[] = [];
 let usageList: UsageLimit[] = [];
+let permList: string[] = [];
 let tick: ReturnType<typeof setInterval> | undefined;
 
 function proBadge(): HTMLElement {
@@ -554,22 +558,136 @@ async function renderUsage(): Promise<void> {
   usageEl.appendChild(form);
 }
 
+// ---- Permanent block (hard mode) ----
+
+function permConfirm(label: string, domains: string[]): boolean {
+  return window.confirm(
+    `Permanently block ${label} (${domains.length} site${domains.length === 1 ? '' : 's'})?\n\n` +
+      'This is hard mode: you will NOT be able to unblock these from the ' +
+      'extension — no off switch, no cooldown. The only way to undo it is to ' +
+      'uninstall the extension entirely.\n\nContinue?',
+  );
+}
+
+function renderPermanent(): void {
+  if (!permanentEl) return;
+  permanentEl.replaceChildren();
+  permanentEl.appendChild(heading('Permanent block (hard mode)', true));
+
+  const desc = document.createElement('p');
+  desc.className = 'muted';
+  desc.textContent = pro
+    ? 'Block sites for good. Once added here they can’t be unblocked, turned off, ' +
+      'or removed in the extension — the only way to undo it is to uninstall the ' +
+      'extension. Best for things like adult sites you never want to reach.'
+    : 'Unlock Pro to block a category for good — no off switch, no cooldown.';
+  permanentEl.appendChild(desc);
+  if (!pro) return;
+
+  // Current permanently-blocked sites (read-only — no remove).
+  if (permList.length > 0) {
+    const ul = document.createElement('ul');
+    ul.className = 'perm-list';
+    for (const domain of permList) {
+      const li = document.createElement('li');
+      li.className = 'perm-item';
+      const name = document.createElement('span');
+      name.className = 'perm-name';
+      name.textContent = domain;
+      const lock = document.createElement('span');
+      lock.className = 'perm-locked';
+      lock.textContent = 'Locked';
+      li.append(name, lock);
+      ul.appendChild(li);
+    }
+    permanentEl.appendChild(ul);
+  }
+
+  // Block a whole category for good.
+  const cats = document.createElement('div');
+  cats.className = 'perm-cats';
+  for (const preset of PRESETS) {
+    const allLocked = preset.domains.every((d) => permList.includes(d));
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-danger';
+    btn.disabled = allLocked;
+    btn.textContent = allLocked
+      ? `${preset.label} — locked`
+      : `Block ${preset.label} forever`;
+    btn.addEventListener('click', () => {
+      if (!permConfirm(preset.label, preset.domains)) return;
+      void (async () => {
+        permList = await addPermanent(preset.domains);
+        renderPermanent();
+      })();
+    });
+    cats.appendChild(btn);
+  }
+  permanentEl.appendChild(cats);
+
+  // Block a single custom site for good.
+  const form = document.createElement('form');
+  form.className = 'perm-form';
+  form.noValidate = true;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = 'e.g. pornhub.com';
+  input.autocomplete = 'off';
+  input.setAttribute('aria-label', 'Website to block permanently');
+  const add = document.createElement('button');
+  add.type = 'submit';
+  add.className = 'btn btn-danger';
+  add.textContent = 'Block forever';
+  const err = document.createElement('p');
+  err.className = 'error';
+  err.hidden = true;
+  err.setAttribute('role', 'alert');
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    err.hidden = true;
+    const domain = normalizeDomain(input.value);
+    if (!domain) {
+      err.textContent = 'Enter a valid website, like pornhub.com.';
+      err.hidden = false;
+      return;
+    }
+    if (permList.includes(domain)) {
+      err.textContent = `${domain} is already permanently blocked.`;
+      err.hidden = false;
+      return;
+    }
+    if (!permConfirm(domain, [domain])) return;
+    void (async () => {
+      permList = await addPermanent([domain]);
+      input.value = '';
+      renderPermanent();
+    })();
+  });
+  form.append(input, add, err);
+  permanentEl.appendChild(form);
+}
+
 function renderAll(): void {
   renderStatus();
   renderPresets();
   renderSchedules();
   void renderUsage();
   renderStrict();
+  renderPermanent();
 }
 
 export async function initProUI(): Promise<void> {
-  [pro, strictState, list, scheduleList, usageList] = await Promise.all([
-    isPro(),
-    strict.getValue(),
-    blocklist.getValue(),
-    schedules.getValue(),
-    usageLimits.getValue(),
-  ]);
+  [pro, strictState, list, scheduleList, usageList, permList] =
+    await Promise.all([
+      isPro(),
+      strict.getValue(),
+      blocklist.getValue(),
+      schedules.getValue(),
+      usageLimits.getValue(),
+      permanentList.getValue(),
+    ]);
   renderAll();
 
   proActive.watch((v) => {
@@ -591,5 +709,9 @@ export async function initProUI(): Promise<void> {
   usageLimits.watch((v) => {
     usageList = v;
     void renderUsage();
+  });
+  permanentList.watch((v) => {
+    permList = v;
+    renderPermanent();
   });
 }

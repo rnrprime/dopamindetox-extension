@@ -42,6 +42,8 @@ PRO (optional subscription)
 • Schedules — block sites by time of day and day of week
 • Usage limits — block a site after a set amount of time each day
 • Strict mode — make a block harder to switch off in a weak moment
+• Permanent block (hard mode) — lock a site or category for good; it can’t be
+  unblocked from the extension (great for adult sites you never want to reach)
 • Category presets — block bundles like social, news, or gaming in one tap
 
 Pro is $1.99/month or $14.99/year, handled securely by ExtPay (Stripe).

@@ -5,6 +5,7 @@ import { resetUsageClock, setFocused, tickUsage } from '@/lib/usage';
 import {
   blocklist,
   masterEnabled,
+  permanentList,
   schedules,
   usageLimits,
 } from '@/lib/storage';
@@ -23,6 +24,7 @@ async function apply(): Promise<void> {
 export default defineBackground(() => {
   // Re-evaluate when anything that affects the effective block set changes.
   blocklist.watch(() => void apply());
+  permanentList.watch(() => void apply());
   masterEnabled.watch(() => void apply());
   schedules.watch(() => void apply());
   usageLimits.watch(() => void apply());

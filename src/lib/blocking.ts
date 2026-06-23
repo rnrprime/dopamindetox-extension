@@ -2,7 +2,7 @@ import { browser } from '#imports';
 import { isPro } from './pro';
 import { isWithinSchedules } from './schedule';
 import { exceededDomains } from './usage';
-import { blocklist, masterEnabled, schedules } from './storage';
+import { blocklist, masterEnabled, permanentList, schedules } from './storage';
 
 // Core blocking via declarativeNetRequest DYNAMIC rules.
 //
@@ -55,24 +55,29 @@ function buildRules(domains: string[]): DnrRule[] {
  *  - (Pro) domains that have exceeded their daily usage limit today
  */
 export async function effectiveBlockedDomains(): Promise<string[]> {
-  const [domains, enabled] = await Promise.all([
+  const [domains, enabled, permanent] = await Promise.all([
     blocklist.getValue(),
     masterEnabled.getValue(),
+    permanentList.getValue(),
   ]);
-  if (!enabled) return [];
 
-  const pro = await isPro();
-  const set = new Set<string>();
+  // Permanent ("hard mode") blocks are ALWAYS enforced — even when the master
+  // switch is off, outside schedules, and regardless of Pro status.
+  const set = new Set<string>(permanent);
 
-  // Manual list — active unless a Pro schedule says we're outside a window.
-  const sched = pro ? await schedules.getValue() : [];
-  if (isWithinSchedules(sched)) {
-    for (const d of domains) set.add(d);
-  }
+  if (enabled) {
+    const pro = await isPro();
 
-  // Usage limits (Pro) — independent trigger; blocked for the rest of the day.
-  if (pro) {
-    for (const d of await exceededDomains()) set.add(d);
+    // Manual list — active unless a Pro schedule says we're outside a window.
+    const sched = pro ? await schedules.getValue() : [];
+    if (isWithinSchedules(sched)) {
+      for (const d of domains) set.add(d);
+    }
+
+    // Usage limits (Pro) — independent trigger; blocked for rest of the day.
+    if (pro) {
+      for (const d of await exceededDomains()) set.add(d);
+    }
   }
 
   return [...set];

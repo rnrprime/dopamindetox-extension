@@ -8,6 +8,7 @@ import {
   addDomain,
   blocklist,
   masterEnabled,
+  permanentList,
   removeDomain,
   strict,
   type StrictSettings,
@@ -24,6 +25,7 @@ const countEl = document.querySelector<HTMLElement>('#count');
 const manageBtn = document.querySelector<HTMLButtonElement>('#manage');
 
 let list: string[] = [];
+let permanent: string[] = [];
 let enabled = true;
 let currentDomain: string | null = null;
 let strictState: StrictSettings = {
@@ -34,6 +36,10 @@ let strictState: StrictSettings = {
 
 function strictLocked(): boolean {
   return strictBlocksRelaxing(strictState);
+}
+
+function isPermanent(domain: string): boolean {
+  return permanent.some((d) => domain === d || domain.endsWith(`.${d}`));
 }
 
 function showNote(message: string): void {
@@ -86,6 +92,18 @@ function renderSite(): void {
   siteDomainEl.className = 'site-domain';
   siteDomainEl.textContent = currentDomain;
 
+  // Permanent (hard mode): blocked for good, no unblock control at all.
+  if (isPermanent(currentDomain)) {
+    const status = document.createElement('p');
+    status.className = 'site-status';
+    status.textContent = 'Permanently blocked';
+    const hint = document.createElement('p');
+    hint.className = 'muted';
+    hint.textContent = 'Locked in hard mode — this can’t be unblocked.';
+    siteActionEl.append(status, hint);
+    return;
+  }
+
   const isBlocked = list.includes(currentDomain);
 
   if (isBlocked) {
@@ -123,8 +141,9 @@ async function toggleCurrent(isBlocked: boolean): Promise<void> {
 }
 
 async function init(): Promise<void> {
-  [list, enabled, currentDomain, strictState] = await Promise.all([
+  [list, permanent, enabled, currentDomain, strictState] = await Promise.all([
     blocklist.getValue(),
+    permanentList.getValue(),
     masterEnabled.getValue(),
     getCurrentDomain(),
     strict.getValue(),

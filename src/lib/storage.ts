@@ -14,6 +14,17 @@ export const blocklist = storage.defineItem<string[]>('sync:blocklist', {
   fallback: [],
 });
 
+/**
+ * Permanently ("hard mode") blocked domains. Once added these are enforced
+ * UNCONDITIONALLY — even when the master switch is off, outside schedules, and
+ * regardless of Pro status — and the UI offers no way to remove them. The only
+ * escape is uninstalling the extension (a browser extension can't prevent that).
+ */
+export const permanentList = storage.defineItem<string[]>(
+  'sync:permanentList',
+  { fallback: [] },
+);
+
 /** Master on/off for all blocking on this device. */
 export const masterEnabled = storage.defineItem<boolean>('local:masterEnabled', {
   fallback: true,
@@ -94,6 +105,28 @@ export async function addDomains(domains: string[]): Promise<string[]> {
   for (const d of domains) set.add(d);
   const next = [...set].sort((a, b) => a.localeCompare(b));
   await blocklist.setValue(next);
+  return next;
+}
+
+/**
+ * Add domains to the PERMANENT (hard mode) list. Irreversible by design — there
+ * is intentionally no removePermanent. Also drops them from the regular,
+ * removable list so a domain isn't shown in two places.
+ */
+export async function addPermanent(domains: string[]): Promise<string[]> {
+  const [perm, manual] = await Promise.all([
+    permanentList.getValue(),
+    blocklist.getValue(),
+  ]);
+  const set = new Set(perm);
+  for (const d of domains) set.add(d);
+  const next = [...set].sort((a, b) => a.localeCompare(b));
+  await permanentList.setValue(next);
+
+  const manualNext = manual.filter((d) => !next.includes(d));
+  if (manualNext.length !== manual.length) {
+    await blocklist.setValue(manualNext);
+  }
   return next;
 }
 
