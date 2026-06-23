@@ -1,6 +1,7 @@
 import { browser } from '#imports';
 import '../../styles/base.css';
 import './style.css';
+import { createCrossPromo } from '@/lib/crosspromo';
 import { normalizeDomain } from '@/lib/domain';
 import {
   addDomain,
@@ -8,6 +9,8 @@ import {
   masterEnabled,
   removeDomain,
 } from '@/lib/storage';
+
+document.querySelector('#crosspromo-slot')?.appendChild(createCrossPromo());
 
 const masterBtn = document.querySelector<HTMLButtonElement>('#master');
 const masterState = document.querySelector<HTMLElement>('#master-state');

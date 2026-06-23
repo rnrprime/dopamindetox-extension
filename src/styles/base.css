@@ -220,6 +220,37 @@ input[type="time"] {
   text-decoration: underline;
 }
 
+/* ---- Cross-promo card (small, non-nagging) ---- */
+.crosspromo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.crosspromo-eyebrow {
+  font-size: var(--fs-footnote);
+  font-weight: 600;
+  color: var(--accent-teal);
+  margin: 0;
+}
+
+.crosspromo-text {
+  margin: 0;
+  font-size: var(--fs-callout);
+}
+
+.crosspromo .btn {
+  margin-top: var(--space-2);
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+.crosspromo-soon,
+.crosspromo-android {
+  margin: 0;
+  font-size: var(--fs-footnote);
+}
+
 /* ---- High-contrast / Windows High Contrast: don't rely on color alone ---- */
 @media (forced-colors: active) {
   .switch-track {

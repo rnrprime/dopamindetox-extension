@@ -1,12 +1,30 @@
+import { browser } from '#imports';
 import '../../styles/base.css';
 import './style.css';
+import { createCrossPromo } from '@/lib/crosspromo';
 import { normalizeDomain } from '@/lib/domain';
+import { PRIVACY_URL, SUPPORT_EMAIL, WEBSITE_URL } from '@/lib/links';
 import {
   addDomain,
   blocklist,
   masterEnabled,
   removeDomain,
 } from '@/lib/storage';
+
+// Cross-promo + about section (single source of truth for URLs in links.ts).
+document.querySelector('#crosspromo-slot')?.appendChild(createCrossPromo());
+
+const privacyLink = document.querySelector<HTMLAnchorElement>('#link-privacy');
+if (privacyLink) privacyLink.href = PRIVACY_URL;
+const supportLink = document.querySelector<HTMLAnchorElement>('#link-support');
+if (supportLink) supportLink.href = `mailto:${SUPPORT_EMAIL}`;
+const websiteLink = document.querySelector<HTMLAnchorElement>('#link-website');
+if (websiteLink) websiteLink.href = WEBSITE_URL;
+
+const versionEl = document.querySelector<HTMLElement>('#version');
+if (versionEl) {
+  versionEl.textContent = `Version ${browser.runtime.getManifest().version}`;
+}
 
 const masterBtn = document.querySelector<HTMLButtonElement>('#master');
 const masterState = document.querySelector<HTMLElement>('#master-state');
