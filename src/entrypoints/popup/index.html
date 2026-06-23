@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dopamin Detox</title>
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup-header">
+        <svg
+          class="brand-mark"
+          width="28"
+          height="28"
+          viewBox="0 0 128 128"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <rect width="128" height="128" rx="28" fill="var(--accent-teal)" />
+          <path
+            d="M64 22 96 32.8v24.8c0 20-13.6 36-32 42.4-18.4-6.4-32-22.4-32-42.4V32.8L64 22Z"
+            fill="none"
+            stroke="#fff"
+            stroke-width="8"
+            stroke-linejoin="round"
+          />
+          <path
+            d="m48 64 11.2 11.2L80 53.6"
+            fill="none"
+            stroke="#fff"
+            stroke-width="8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <h1>Dopamin Detox</h1>
+      </header>
+
+      <div class="row toggle-row">
+        <span id="toggle-label" class="row-label">Blocking</span>
+        <button
+          id="master"
+          class="switch"
+          type="button"
+          role="switch"
+          aria-checked="true"
+          aria-labelledby="toggle-label"
+        >
+          <span class="switch-track" aria-hidden="true">
+            <span class="switch-thumb"></span>
+          </span>
+          <span id="master-state" class="switch-state">On</span>
+        </button>
+      </div>
+
+      <section class="site-card" aria-live="polite">
+        <p id="site-domain" class="site-domain muted">Checking this tab…</p>
+        <div id="site-action"></div>
+      </section>
+
+      <div class="row count-row">
+        <span id="count" class="muted"></span>
+        <button id="manage" class="btn-link" type="button">Manage sites</button>
+      </div>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

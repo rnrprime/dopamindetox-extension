@@ -1,0 +1,88 @@
+/*
+  Design tokens for the Dopamin Detox browser extension.
+  Mirrors the iOS app and website: HIG-native system font stack, ONE confident
+  teal accent, a warm terracotta reserved ONLY for the active/strict moment, and
+  otherwise neutral grays. No third-party fonts, no gradients, no glassmorphism.
+  Keep this in sync with dopamindetox-web/src/styles/tokens.css.
+*/
+
+:root {
+  /* ---- Accent: the app's AccentTeal ---- */
+  --accent-teal: #0c7b73;
+  --accent-teal-strong: #0a635d; /* hover / pressed */
+  --accent-teal-soft: #e3f1ef;   /* tint backgrounds (light) */
+
+  /* ---- ActiveClay: warm terracotta, the app's active/strict state ONLY ---- */
+  --active-clay: #b65b3c;
+  --active-clay-soft: #f6e8e1;
+
+  /* ---- Neutral surfaces & text (light mode) ---- */
+  --bg: #ffffff;
+  --bg-elevated: #f6f7f8;
+  --bg-sunken: #eef0f2;
+  --text: #16191c;
+  --text-secondary: #54606b;
+  --border: #dfe3e7;
+  --border-strong: #c6ccd2;
+
+  --link: var(--accent-teal);
+  --link-hover: var(--accent-teal-strong);
+
+  /* ---- Focus ring (visible, AA) ---- */
+  --focus-ring: var(--accent-teal-strong);
+
+  /* ---- Type: system font stack only ---- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --fs-title: 1.375rem;   /* ~22px */
+  --fs-headline: 1.0625rem; /* ~17px, matches iOS body/headline */
+  --fs-body: 1rem;        /* ~16px */
+  --fs-callout: 0.9375rem;
+  --fs-footnote: 0.8125rem;
+  --lh-body: 1.6;         /* generous for older-adult readability */
+  --lh-tight: 1.25;
+
+  /* ---- Spacing (8px grid) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* ---- Layout ---- */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --popup-width: 380px;
+
+  /* ---- Restrained shadow (no oversized drop shadows) ---- */
+  --shadow-sm: 0 1px 2px rgba(16, 25, 28, 0.06);
+  --shadow-card: 0 1px 3px rgba(16, 25, 28, 0.08), 0 1px 1px rgba(16, 25, 28, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent-teal: #4fd0c4;        /* lighter teal carries contrast on dark */
+    --accent-teal-strong: #6ddbd0;
+    --accent-teal-soft: #122a28;
+
+    --active-clay: #e0865f;
+    --active-clay-soft: #2a1c16;
+
+    --bg: #111315;
+    --bg-elevated: #1a1d20;
+    --bg-sunken: #0c0e10;
+    --text: #f2f4f5;
+    --text-secondary: #aab4bd;
+    --border: #2b2f34;
+    --border-strong: #3a4047;
+
+    --link: var(--accent-teal);
+    --link-hover: var(--accent-teal-strong);
+    --focus-ring: var(--accent-teal);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+}

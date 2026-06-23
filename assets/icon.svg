@@ -1,0 +1,9 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dopamin Detox mark: mirrors the iOS app / website logo.
+       Teal rounded square + white shield + check. No gradients, no banned patterns. -->
+  <rect width="128" height="128" rx="28" fill="#0c7b73"/>
+  <path d="M64 22 96 32.8v24.8c0 20-13.6 36-32 42.4-18.4-6.4-32-22.4-32-42.4V32.8L64 22Z"
+        fill="none" stroke="#ffffff" stroke-width="8" stroke-linejoin="round"/>
+  <path d="m48 64 11.2 11.2L80 53.6"
+        fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

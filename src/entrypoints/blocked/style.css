@@ -1,0 +1,40 @@
+body {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  background: var(--bg);
+}
+
+.blocked {
+  max-width: 32rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.blocked .brand-mark {
+  border-radius: 14px;
+}
+
+.blocked h1 {
+  font-size: var(--fs-title);
+}
+
+.blocked .lead {
+  font-size: var(--fs-headline);
+}
+
+.blocked #domain {
+  /* The one calm use of warm clay: marks the active block, not an accent. */
+  color: var(--active-clay);
+  word-break: break-all;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
