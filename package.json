@@ -1,6 +1,6 @@
 {
   "name": "dopamindetox-extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Dopamin Detox — cross-browser website blocker (Chrome, Edge, Firefox). Local-only, no backend.",
   "type": "module",
   "private": true,
@@ -20,5 +20,8 @@
     "sharp": "^0.35.2",
     "typescript": "^6.0.3",
     "wxt": "^0.20.26"
+  },
+  "dependencies": {
+    "extpay": "^3.1.2"
   }
 }

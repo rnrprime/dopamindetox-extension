@@ -5,7 +5,7 @@ export const WEBSITE_URL = 'https://dopamindetox.app';
 export const PRIVACY_URL = 'https://dopamindetox.app/privacy';
 export const SUPPORT_EMAIL = 'dopaminedetox570@gmail.com';
 
-// iOS App Store link — NOT live yet. Set this to the real URL when the app
-// ships; until then the cross-promo card shows "coming soon" rather than a
-// broken link. (Placeholder per the build brief's [APP_STORE_URL].)
-export const APP_STORE_URL: string | null = null;
+// iOS App Store link — live. The cross-promo card shows a real "Get it on the
+// App Store" button (it falls back to "coming soon" only if this is null).
+export const APP_STORE_URL: string | null =
+  'https://apps.apple.com/us/app/dopamin-detox-earn-screen-time/id6780148393';

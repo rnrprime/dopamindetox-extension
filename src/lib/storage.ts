@@ -63,13 +63,26 @@ export const usageLimits = storage.defineItem<UsageLimit[]>('sync:usageLimits', 
   fallback: [],
 });
 
-/** (Pro) Today's accumulated seconds per domain (resets at local midnight). */
+/**
+ * (Pro) Today's accumulated focused-tab seconds per domain (resets at local
+ * midnight). Holds EVERY visited domain, not just limited ones, so it powers
+ * both usage limits and the "Time by website" report. Local-only — never sent.
+ */
 export const usageState = storage.defineItem<{
   date: string;
   seconds: Record<string, number>;
 }>('local:usageState', {
   fallback: { date: '', seconds: {} },
 });
+
+/**
+ * (Pro) Past days' per-domain seconds, keyed by date ("YYYY-MM-DD"). Today lives
+ * in usageState; finished days are archived here. Capped to the last few days
+ * (see usage.ts) so this never grows without bound. Local-only — never sent.
+ */
+export const siteTimeHistory = storage.defineItem<
+  Record<string, Record<string, number>>
+>('local:siteTimeHistory', { fallback: {} });
 
 /** (Pro) The currently-counting domain + when it started (for usage tracking). */
 export const usageActive = storage.defineItem<{

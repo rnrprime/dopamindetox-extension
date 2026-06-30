@@ -1,20 +1,27 @@
 import { normalizeDomain } from '@/lib/domain';
-import { isPro, PRO_FEATURES, proActive } from '@/lib/pro';
+import { extpay, isPro, PRO_FEATURES, proActive } from '@/lib/pro';
 import { PRESETS } from '@/lib/presets';
 import {
   strictBlocksRelaxing,
   strictCooldownElapsed,
   strictCooldownPending,
 } from '@/lib/strict';
-import { usedSecondsToday } from '@/lib/usage';
+import {
+  siteTimeRecent,
+  siteTimeToday,
+  usedSecondsToday,
+  type SiteTime,
+} from '@/lib/usage';
 import {
   addDomains,
   addPermanent,
   blocklist,
   permanentList,
   schedules,
+  siteTimeHistory,
   strict,
   usageLimits,
+  usageState,
   type Schedule,
   type StrictSettings,
   type UsageLimit,
@@ -28,12 +35,24 @@ const statusEl = document.querySelector<HTMLElement>('#pro-status');
 const presetsEl = document.querySelector<HTMLElement>('#pro-presets');
 const schedulesEl = document.querySelector<HTMLElement>('#pro-schedules');
 const usageEl = document.querySelector<HTMLElement>('#pro-usage');
+const siteTimeEl = document.querySelector<HTMLElement>('#pro-sitetime');
 const strictEl = document.querySelector<HTMLElement>('#pro-strict');
 const permanentEl = document.querySelector<HTMLElement>('#pro-permanent');
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// "Time by website" range toggle (module-level so it survives re-renders).
+let siteTimeRange: 'today' | 'week' = 'today';
+
+// The full ExtPay user (plan, dates, subscription status). The `User`/`Plan`
+// interfaces aren't exported by the package, so derive the type from getUser().
+type ExtPayUser = Awaited<ReturnType<typeof extpay.getUser>>;
+
 let pro = false;
+let proUser: ExtPayUser | null = null;
+// True only after a purchase completes IN THIS SESSION, so we can show an
+// explicit "Purchase complete" confirmation (not shown on a normal page load).
+let justActivated = false;
 let strictState: StrictSettings = {
   enabled: false,
   cooldownMinutes: 30,
@@ -64,16 +83,129 @@ function heading(text: string, withBadge = false): HTMLElement {
 
 // ---- Status / paywall ----
 
+function checkMark(): SVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'pro-active-check');
+  svg.setAttribute('width', '24');
+  svg.setAttribute('height', '24');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  const circle = document.createElementNS(svg.namespaceURI, 'circle');
+  circle.setAttribute('cx', '12');
+  circle.setAttribute('cy', '12');
+  circle.setAttribute('r', '11');
+  circle.setAttribute('fill', 'currentColor');
+  const path = document.createElementNS(svg.namespaceURI, 'path');
+  path.setAttribute('d', 'M7 12.5l3.2 3.2L17 9');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', '#fff');
+  path.setAttribute('stroke-width', '2.4');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  svg.append(circle, path);
+  return svg;
+}
+
+function fmtMoney(cents: number, currency: string): string {
+  try {
+    return (cents / 100).toLocaleString(undefined, {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+    });
+  } catch {
+    return `$${(cents / 100).toFixed(2)}`;
+  }
+}
+
+function fmtDate(d: Date | string | null | undefined): string {
+  if (!d) return '';
+  const date = new Date(d);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+/** "Yearly plan · $14.99 / year" etc. Empty string when the plan is unknown. */
+function planLabel(user: ExtPayUser): string {
+  const plan = user.plan;
+  if (!plan) return '';
+  const money = fmtMoney(plan.unitAmountCents, plan.currency);
+  if (plan.interval === 'year') return `Yearly plan · ${money} / year`;
+  if (plan.interval === 'month') return `Monthly plan · ${money} / month`;
+  return `${money} · one-time`;
+}
+
 function renderStatus(): void {
   if (!statusEl) return;
   statusEl.replaceChildren();
   statusEl.appendChild(heading('Dopamin Detox Pro'));
 
   if (pro) {
-    const p = document.createElement('p');
-    p.className = 'muted';
-    p.textContent = 'Pro is active. Thank you for supporting Dopamin Detox.';
-    statusEl.appendChild(p);
+    const panel = document.createElement('div');
+    panel.className = 'pro-active';
+
+    const head = document.createElement('div');
+    head.className = 'pro-active-head';
+    const title = document.createElement('span');
+    title.className = 'pro-active-title';
+    title.textContent = justActivated ? 'Purchase complete — Pro is active' : 'Pro is active';
+    head.append(checkMark(), title);
+    panel.appendChild(head);
+
+    // Plan + price.
+    const label = proUser ? planLabel(proUser) : '';
+    if (label) {
+      const planEl = document.createElement('p');
+      planEl.className = 'pro-active-plan';
+      planEl.textContent = label;
+      panel.appendChild(planEl);
+    }
+
+    // Status / renewal line (honest about what ExtPay actually reports).
+    const status = proUser?.subscriptionStatus;
+    const cancelAt = proUser?.subscriptionCancelAt;
+    const detail = document.createElement('p');
+    if (status === 'past_due') {
+      detail.className = 'pro-warn';
+      detail.textContent =
+        'There was a problem with your last payment. Update your payment method to keep Pro.';
+    } else if (cancelAt) {
+      detail.className = 'pro-warn';
+      detail.textContent = `Your plan is set to end on ${fmtDate(cancelAt)}.`;
+    } else if (proUser?.plan && proUser.plan.interval !== 'once') {
+      detail.className = 'muted';
+      detail.textContent = 'Renews automatically. You can cancel anytime.';
+    } else if (proUser?.paidAt) {
+      detail.className = 'muted';
+      detail.textContent = `Active since ${fmtDate(proUser.paidAt)}.`;
+    } else {
+      detail.className = 'muted';
+      detail.textContent = 'Thank you for supporting Dopamin Detox.';
+    }
+    panel.appendChild(detail);
+
+    if (proUser?.paidAt && !cancelAt && status !== 'past_due') {
+      const since = document.createElement('p');
+      since.className = 'muted pro-active-since';
+      since.textContent = `Member since ${fmtDate(proUser.paidAt)}.`;
+      panel.appendChild(since);
+    }
+
+    const manage = document.createElement('button');
+    manage.type = 'button';
+    manage.className = 'btn';
+    manage.textContent =
+      status === 'past_due' ? 'Update payment method' : 'Manage subscription';
+    manage.addEventListener('click', () => {
+      void extpay.openPaymentPage();
+    });
+    panel.appendChild(manage);
+
+    statusEl.appendChild(panel);
   } else {
     const intro = document.createElement('p');
     intro.textContent = 'Unlock advanced focus tools:';
@@ -93,37 +225,60 @@ function renderStatus(): void {
     price.textContent = '$1.99 / month or $14.99 / year';
     statusEl.appendChild(price);
 
+    // Shown after the user opens checkout, so they know what to expect when
+    // they come back to this tab.
+    const pending = document.createElement('p');
+    pending.className = 'pro-pending';
+    pending.setAttribute('role', 'status');
+    pending.hidden = true;
+    pending.textContent =
+      'Complete your purchase in the tab that just opened. When you come back here, Pro unlocks automatically.';
+
     const upgrade = document.createElement('button');
     upgrade.type = 'button';
     upgrade.className = 'btn btn-primary';
     upgrade.textContent = 'Upgrade to Pro';
+    upgrade.addEventListener('click', () => {
+      pending.hidden = false;
+      void extpay.openPaymentPage();
+    });
+
+    // Already paid (e.g. on another device)? Sign in to restore.
+    const restore = document.createElement('button');
+    restore.type = 'button';
+    restore.className = 'btn';
+    restore.textContent = 'Restore purchase';
+    restore.addEventListener('click', () => {
+      pending.hidden = false;
+      void extpay.openLoginPage();
+    });
+
     const note = document.createElement('p');
     note.className = 'muted pro-upgrade-note';
-    note.hidden = true;
-    upgrade.addEventListener('click', () => {
-      note.hidden = false;
-      note.textContent =
-        'Online purchasing isn’t available yet — it’s still being set up. ' +
-        'For now, use the testing unlock below.';
-    });
-    statusEl.append(upgrade, note);
+    note.textContent =
+      'Secure checkout on ExtensionPay. Cancel anytime — the yearly plan is the ' +
+      'best value.';
+    statusEl.append(upgrade, restore, pending, note);
   }
 
-  // Temporary testing unlock (removed once a payment processor is wired).
-  const devWrap = document.createElement('div');
-  devWrap.className = 'pro-dev';
-  const devToggle = document.createElement('button');
-  devToggle.type = 'button';
-  devToggle.className = 'btn';
-  devToggle.textContent = pro ? 'Lock Pro (testing)' : 'Unlock Pro (testing)';
-  devToggle.addEventListener('click', () => {
-    void proActive.setValue(!pro);
-  });
-  const devNote = document.createElement('p');
-  devNote.className = 'muted pro-dev-note';
-  devNote.textContent = 'Testing only — temporary until payments are added.';
-  devWrap.append(devToggle, devNote);
-  statusEl.appendChild(devWrap);
+  // Dev-only unlock: present in `wxt dev`, compiled OUT of production builds so
+  // it can never ship as a free-unlock backdoor in the store.
+  if (import.meta.env.DEV) {
+    const devWrap = document.createElement('div');
+    devWrap.className = 'pro-dev';
+    const devToggle = document.createElement('button');
+    devToggle.type = 'button';
+    devToggle.className = 'btn';
+    devToggle.textContent = pro ? 'Lock Pro (dev)' : 'Unlock Pro (dev)';
+    devToggle.addEventListener('click', () => {
+      void proActive.setValue(!pro);
+    });
+    const devNote = document.createElement('p');
+    devNote.className = 'muted pro-dev-note';
+    devNote.textContent = 'Dev build only — not present in store builds.';
+    devWrap.append(devToggle, devNote);
+    statusEl.appendChild(devWrap);
+  }
 }
 
 // ---- Category presets ----
@@ -558,6 +713,113 @@ async function renderUsage(): Promise<void> {
   usageEl.appendChild(form);
 }
 
+// ---- Time by website (Pro report) ----
+
+function fmtDuration(seconds: number): string {
+  const m = Math.round(seconds / 60);
+  if (m < 1) return '<1 min';
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return rem ? `${h}h ${rem}m` : `${h}h`;
+}
+
+function rangeButton(
+  label: string,
+  active: boolean,
+  onClick: () => void,
+): HTMLButtonElement {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'seg-btn';
+  btn.textContent = label;
+  btn.setAttribute('aria-pressed', String(active));
+  btn.addEventListener('click', onClick);
+  return btn;
+}
+
+async function renderSiteTime(): Promise<void> {
+  if (!siteTimeEl) return;
+  siteTimeEl.replaceChildren();
+  siteTimeEl.appendChild(heading('Time by website', true));
+
+  const desc = document.createElement('p');
+  desc.className = 'muted';
+  desc.textContent = pro
+    ? 'See where your time goes. Counted on this device only, while a tab is in ' +
+      'focus — nothing ever leaves your browser.'
+    : 'Unlock Pro to see how much time you spend on each website.';
+  siteTimeEl.appendChild(desc);
+  if (!pro) return;
+
+  // Today / Last 7 days toggle.
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  seg.setAttribute('role', 'group');
+  seg.setAttribute('aria-label', 'Time range');
+  seg.append(
+    rangeButton('Today', siteTimeRange === 'today', () => {
+      if (siteTimeRange !== 'today') {
+        siteTimeRange = 'today';
+        void renderSiteTime();
+      }
+    }),
+    rangeButton('Last 7 days', siteTimeRange === 'week', () => {
+      if (siteTimeRange !== 'week') {
+        siteTimeRange = 'week';
+        void renderSiteTime();
+      }
+    }),
+  );
+  siteTimeEl.appendChild(seg);
+
+  const data: SiteTime[] =
+    siteTimeRange === 'today' ? await siteTimeToday() : await siteTimeRecent();
+  // Drop noise under ~30s; show the top sites only.
+  const top = data.filter((d) => d.seconds >= 30).slice(0, 15);
+
+  if (top.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'muted';
+    empty.textContent =
+      siteTimeRange === 'today'
+        ? 'No browsing time recorded yet today.'
+        : 'No browsing time recorded in the last 7 days.';
+    siteTimeEl.appendChild(empty);
+    return;
+  }
+
+  const max = top[0]?.seconds ?? 1;
+  const ul = document.createElement('ul');
+  ul.className = 'sitetime-list';
+  for (const { domain, seconds } of top) {
+    const li = document.createElement('li');
+    li.className = 'sitetime-item';
+
+    const head = document.createElement('div');
+    head.className = 'sitetime-head';
+    const name = document.createElement('span');
+    name.className = 'sitetime-name';
+    name.textContent = domain;
+    const time = document.createElement('span');
+    time.className = 'sitetime-time';
+    time.textContent = fmtDuration(seconds);
+    head.append(name, time);
+
+    const track = document.createElement('div');
+    track.className = 'sitetime-track';
+    track.setAttribute('aria-hidden', 'true');
+    const fill = document.createElement('div');
+    fill.className = 'sitetime-fill';
+    fill.style.width = `${Math.max(2, Math.round((seconds / max) * 100))}%`;
+    track.appendChild(fill);
+
+    li.append(head, track);
+    ul.appendChild(li);
+  }
+  siteTimeEl.appendChild(ul);
+}
+
 // ---- Permanent block (hard mode) ----
 
 function permConfirm(label: string, domains: string[]): boolean {
@@ -674,8 +936,44 @@ function renderAll(): void {
   renderPresets();
   renderSchedules();
   void renderUsage();
+  void renderSiteTime();
   renderStrict();
   renderPermanent();
+}
+
+/** Pull the full ExtPay user (plan + dates) for the active panel. */
+async function loadProUser(): Promise<void> {
+  if (!pro) {
+    proUser = null;
+    return;
+  }
+  try {
+    proUser = await extpay.getUser();
+  } catch {
+    proUser = null; // offline: panel falls back to the plain "Pro is active"
+  }
+}
+
+/**
+ * Ask ExtPay directly for paid status and refresh the UI. Called when the tab
+ * becomes visible again (e.g. the user just finished checkout in another tab),
+ * so Pro is reflected immediately without waiting for the background poll.
+ */
+async function refreshFromExtPay(): Promise<void> {
+  let user: ExtPayUser;
+  try {
+    user = await extpay.getUser();
+  } catch {
+    return; // offline: keep whatever we have
+  }
+  const nowPaid = user.paid === true;
+  if (nowPaid && !pro) justActivated = true;
+  proUser = user;
+  if (nowPaid !== pro) {
+    pro = nowPaid;
+    await proActive.setValue(nowPaid); // keeps the cache + background in sync
+  }
+  renderStatus();
 }
 
 export async function initProUI(): Promise<void> {
@@ -688,11 +986,30 @@ export async function initProUI(): Promise<void> {
       usageLimits.getValue(),
       permanentList.getValue(),
     ]);
+  await loadProUser();
   renderAll();
 
+  // Instant unlock the moment payment completes while this page is open.
+  extpay.onPaid.addListener((user) => {
+    justActivated = true;
+    pro = true;
+    proUser = user;
+    void proActive.setValue(true);
+    renderStatus();
+  });
+
+  // Re-check when the user returns to this tab after paying.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void refreshFromExtPay();
+  });
+
   proActive.watch((v) => {
+    if (v && !pro) justActivated = true;
     pro = v;
-    renderAll();
+    void (async () => {
+      await loadProUser();
+      renderAll();
+    })();
   });
   strict.watch((v) => {
     strictState = v;
@@ -710,6 +1027,9 @@ export async function initProUI(): Promise<void> {
     usageList = v;
     void renderUsage();
   });
+  // Live-update the time report as the background records time / archives days.
+  usageState.watch(() => void renderSiteTime());
+  siteTimeHistory.watch(() => void renderSiteTime());
   permanentList.watch((v) => {
     permList = v;
     renderPermanent();

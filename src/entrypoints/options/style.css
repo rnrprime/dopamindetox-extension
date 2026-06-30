@@ -166,6 +166,57 @@ body {
   margin: 0;
 }
 
+/* Clear "you are Pro" confirmation panel. */
+.pro-active {
+  border: 1px solid var(--accent-teal);
+  background: var(--accent-teal-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.pro-active-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pro-active-check {
+  flex: none;
+  color: var(--accent-teal);
+}
+
+.pro-active-title {
+  font-weight: 700;
+  font-size: var(--fs-headline);
+}
+
+.pro-active-plan {
+  font-weight: 600;
+  margin: 0;
+}
+
+.pro-active-since {
+  font-size: var(--fs-footnote);
+  margin: 0;
+}
+
+.pro-warn {
+  color: var(--active-clay);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* "Finish in the other tab" note shown after opening checkout. */
+.pro-pending {
+  font-weight: 600;
+  color: var(--accent-teal);
+  margin: 0;
+}
+
 .preset-list {
   display: flex;
   flex-direction: column;
@@ -296,6 +347,82 @@ body {
 
 .usage-minutes {
   width: 6rem;
+}
+
+/* ---- Time by website (Pro report) ---- */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.seg-btn {
+  appearance: none;
+  background: var(--bg);
+  border: none;
+  padding: var(--space-2) var(--space-3);
+  min-height: 44px;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.seg-btn + .seg-btn {
+  border-left: 1px solid var(--border-strong);
+}
+
+.seg-btn[aria-pressed='true'] {
+  background: var(--accent-teal);
+  color: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .seg-btn[aria-pressed='true'] {
+    color: #08201e;
+  }
+}
+
+.sitetime-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sitetime-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.sitetime-name {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.sitetime-time {
+  font-size: var(--fs-footnote);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.sitetime-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+
+.sitetime-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-teal);
 }
 
 /* ---- Permanent block (hard mode) ---- */
